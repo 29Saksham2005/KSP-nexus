@@ -1,10 +1,7 @@
 from fastapi import APIRouter
 
-router = APIRouter()
+from app.api.v1.health import router as health_router
 
+api_router = APIRouter()
 
-@router.get("/")
-async def api_root():
-    return {
-        "message": "KSP NEXUS API v1"
-    }
+api_router.include_router(health_router)
