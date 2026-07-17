@@ -1,20 +1,25 @@
 from fastapi import FastAPI
 
+from app.api.router import router
+from app.core.config import settings
+
 app = FastAPI(
-    title="KSP NEXUS API",
-    version="0.1.0",
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
 )
+
+app.include_router(router, prefix="/api/v1")
 
 
 @app.get("/")
-def root():
+async def root():
     return {
         "message": "Welcome to KSP NEXUS API"
     }
 
 
 @app.get("/health")
-def health():
+async def health():
     return {
         "status": "healthy"
     }
