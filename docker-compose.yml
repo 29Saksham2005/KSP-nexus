@@ -1,0 +1,6 @@
+version: "3.9"
+
+# Docker support is reserved for future implementation.
+# See Development Guide (Section 3.5).
+
+services: {}
