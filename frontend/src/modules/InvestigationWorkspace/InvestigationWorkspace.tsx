@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, FileText } from 'lucide-react';
 import { firService, type FIRResponse } from '../../services/fir';
+import { FIRDetailPanel } from './FIRDetailPanel';
 
 export const InvestigationWorkspace: React.FC = () => {
   const [firs, setFirs] = useState<FIRResponse[]>([]);
@@ -10,6 +11,9 @@ export const InvestigationWorkspace: React.FC = () => {
   // Filter States
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('All');
+
+  // Track which FIR row is selected for the slide-over panel
+  const [selectedFirId, setSelectedFirId] = useState<number | null>(null);
 
   const fetchFirs = async () => {
     setIsLoading(true);
@@ -73,7 +77,7 @@ export const InvestigationWorkspace: React.FC = () => {
 
       {/* Data Grid */}
       <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="bg-slate-950/50 text-slate-400 font-medium border-b border-slate-800">
               <tr>
@@ -99,7 +103,11 @@ export const InvestigationWorkspace: React.FC = () => {
                 </tr>
               ) : (
                 firs.map((fir) => (
-                  <tr key={fir.id} className="hover:bg-slate-800/50 transition-colors">
+                  <tr 
+                    key={fir.id} 
+                    onClick={() => setSelectedFirId(fir.id)}
+                    className="hover:bg-slate-800 cursor-pointer transition-colors"
+                  >
                     <td className="px-6 py-4 font-mono text-blue-400">{fir.fir_number}</td>
                     <td className="px-6 py-4">{fir.station_name}</td>
                     <td className="px-6 py-4">{fir.category_name}</td>
@@ -125,6 +133,12 @@ export const InvestigationWorkspace: React.FC = () => {
           <span>Showing top {firs.length} of {totalCount} records</span>
         </div>
       </div>
+
+      {/* Slide-Over Panel Component */}
+      <FIRDetailPanel 
+        firId={selectedFirId} 
+        onClose={() => setSelectedFirId(null)} 
+      />
     </div>
   );
 };

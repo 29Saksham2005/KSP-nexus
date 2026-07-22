@@ -5,6 +5,7 @@ from app.api.dependencies import get_current_user
 from app.models.all_models import AuthUser
 from app.services.fir_service import fir_service
 from app.schemas.fir import FIRPaginatedResponse
+from fastapi import Path
 
 router = APIRouter(prefix="/firs", tags=["Investigation Workspace"])
 
@@ -35,4 +36,20 @@ def get_firs(
             "total_count": total_count,
             "items": [item.model_dump() for item in items]
         }
+    }
+@router.get("/{fir_id}")
+def get_fir_by_id(
+    fir_id: int = Path(..., description="The ID of the FIR"),
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user)
+):
+    """
+    Retrieves deep relational details for a single FIR.
+    """
+    details = fir_service.get_fir_details(db, fir_id)
+    
+    return {
+        "success": True,
+        "message": "FIR details retrieved successfully",
+        "data": details.model_dump()
     }

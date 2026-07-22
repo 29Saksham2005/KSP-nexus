@@ -184,7 +184,7 @@ def generate_and_populate_db():
         FOREIGN KEY (ActID, SectionID) REFERENCES Section(ActCode, SectionCode)
     );
     
-    CREATE TABLE Victim (VictimMasterID INT PRIMARY KEY, CaseMasterID INT REFERENCES CaseMaster(CaseMasterID), VictimName VARCHAR(150), AgeYear INT, GenderID INT, Victim_Police VARCHAR(1));
+    CREATE TABLE Victim (VictimMasterID INT PRIMARY KEY, CaseMasterID INT REFERENCES CaseMaster(CaseMasterID), VictimName VARCHAR(150), AgeYear INT, GenderID INT, VictimPolice VARCHAR(1));
     CREATE TABLE Accused (AccusedMasterID INT PRIMARY KEY, CaseMasterID INT REFERENCES CaseMaster(CaseMasterID), AccusedName VARCHAR(150), AgeYear INT, GenderID INT, PersonID VARCHAR(20));
     CREATE TABLE ArrestSurrender (ArrestSurrenderID INT PRIMARY KEY, CaseMasterID INT REFERENCES CaseMaster(CaseMasterID), ArrestSurrenderTypeID INT, ArrestSurrenderDate DATE, ArrestSurrenderStateId INT REFERENCES State(StateID), ArrestSurrenderDistrictId INT REFERENCES District(DistrictID), PoliceStationID INT REFERENCES Unit(UnitID), IOID INT REFERENCES Employee(EmployeeID), CourtID INT REFERENCES Court(CourtID), AccusedMasterID INT REFERENCES Accused(AccusedMasterID), IsAccused BOOLEAN, IsComplainantAccused BOOLEAN);
     CREATE TABLE inv_arrestsurrenderaccused (ArrestSurrenderID INT REFERENCES ArrestSurrender(ArrestSurrenderID), AccusedMasterID INT REFERENCES Accused(AccusedMasterID), PRIMARY KEY (ArrestSurrenderID, AccusedMasterID));
