@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { MainLayout } from './layouts/MainLayout';
 import { MissionControl } from './modules/MissionControl/MissionControl';
 import { GeoIntelligence } from './modules/GeoIntelligence/GeoIntelligence';
+import { InvestigationWorkspace } from './modules/InvestigationWorkspace/InvestigationWorkspace';
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -40,6 +41,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <GeoIntelligence />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/firs" 
+            element={
+              <ProtectedRoute>
+                <InvestigationWorkspace />
               </ProtectedRoute>
             } 
           />

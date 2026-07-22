@@ -1,32 +1,30 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models.all_models import FIR
+from app.models.all_models import CaseMaster
 from app.schemas.dashboard import KPIData, TrendDataPoint
 
 class DashboardService:
-    """
-    Handles all statistical and aggregation business logic for Mission Control.
-    """
-    
     @staticmethod
     def get_kpis(db: Session) -> KPIData:
-        """Calculates top-level Key Performance Indicators."""
-        total_firs = db.query(func.count(FIR.id)).scalar() or 0
+        total_cases = db.query(func.count(CaseMaster.CaseMasterID)).scalar() or 0
         
-        active_investigations = db.query(func.count(FIR.id)).filter(
-            FIR.status == "Under Investigation"
+        # CaseStatusID 1 = Under Investigation
+        active_investigations = db.query(func.count(CaseMaster.CaseMasterID)).filter(
+            CaseMaster.CaseStatusID == 1
         ).scalar() or 0
         
-        open_cases = db.query(func.count(FIR.id)).filter(
-            FIR.status == "Open"
+        # CaseStatusID 1 & 2 = Active & Charge Sheeted (still processing in courts)
+        open_cases = db.query(func.count(CaseMaster.CaseMasterID)).filter(
+            CaseMaster.CaseStatusID.in_([1, 2])
         ).scalar() or 0
         
-        solved_cases = db.query(func.count(FIR.id)).filter(
-            FIR.status == "Closed"
+        # CaseStatusID 3 = Closed
+        solved_cases = db.query(func.count(CaseMaster.CaseMasterID)).filter(
+            CaseMaster.CaseStatusID == 3
         ).scalar() or 0
 
         return KPIData(
-            total_firs=total_firs,
+            total_firs=total_cases,
             active_investigations=active_investigations,
             open_cases=open_cases,
             solved_cases=solved_cases
@@ -34,21 +32,15 @@ class DashboardService:
 
     @staticmethod
     def get_trends(db: Session, period: str = "monthly") -> list[TrendDataPoint]:
-        """
-        Aggregates FIR counts over time.
-        Defaults to grouping by month using PostgreSQL's date_trunc.
-        """
         if period == "yearly":
-            time_group = func.date_trunc('year', FIR.registration_date)
+            time_group = func.date_trunc('year', CaseMaster.CrimeRegisteredDate)
             date_format = "%Y"
         else:
-            # Default to monthly
-            time_group = func.date_trunc('month', FIR.registration_date)
-            date_format = "%b %Y" # e.g., "Jan 2026"
+            time_group = func.date_trunc('month', CaseMaster.CrimeRegisteredDate)
+            date_format = "%b %Y"
 
-        # Query the database to group by the truncated date and count FIRs
         results = (
-            db.query(time_group.label('period'), func.count(FIR.id).label('count'))
+            db.query(time_group.label('period'), func.count(CaseMaster.CaseMasterID).label('count'))
             .group_by('period')
             .order_by('period')
             .all()

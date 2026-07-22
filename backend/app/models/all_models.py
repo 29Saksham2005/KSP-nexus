@@ -1,195 +1,248 @@
-import uuid
-from datetime import datetime
-from sqlalchemy import (
-    Column, String, Integer, Text, DECIMAL, Date, DateTime, 
-    ForeignKey, Table
-)
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, Numeric, ForeignKey, Text
 from app.core.database import Base
 
-# ==========================================
-# JUNCTION TABLES (Many-to-Many)
-# ==========================================
+# ==============================================================================
+# 1. MASTER & LOOKUP TABLES
+# ==============================================================================
 
-fir_persons = Table(
-    "fir_persons",
-    Base.metadata,
-    Column("fir_id", UUID(as_uuid=True), ForeignKey("firs.id", ondelete="CASCADE"), primary_key=True),
-    Column("person_id", UUID(as_uuid=True), ForeignKey("persons.id", ondelete="CASCADE"), primary_key=True),
-    Column("role_in_case", String(50), nullable=False) # e.g., Accused, Victim, Witness, Informant, Suspect
-)
+class CasteMaster(Base):
+    __tablename__ = "castemaster"
+    caste_master_id = Column("caste_master_id", Integer, primary_key=True)
+    caste_master_name = Column("caste_master_name", String)
 
-fir_officers = Table(
-    "fir_officers",
-    Base.metadata,
-    Column("fir_id", UUID(as_uuid=True), ForeignKey("firs.id", ondelete="CASCADE"), primary_key=True),
-    Column("officer_id", UUID(as_uuid=True), ForeignKey("officers.id", ondelete="CASCADE"), primary_key=True),
-    Column("assignment_role", String(50), nullable=False) # e.g., Investigating Officer, Supervising Officer
-)
+class ReligionMaster(Base):
+    __tablename__ = "religionmaster"
+    ReligionID = Column("religionid", Integer, primary_key=True)
+    ReligionName = Column("religionname", String)
 
+class OccupationMaster(Base):
+    __tablename__ = "occupationmaster"
+    OccupationID = Column("occupationid", Integer, primary_key=True)
+    OccupationName = Column("occupationname", String)
 
-# ==========================================
-# ADMINISTRATIVE ENTITIES
-# ==========================================
+class CaseStatusMaster(Base):
+    __tablename__ = "casestatusmaster"
+    CaseStatusID = Column("casestatusid", Integer, primary_key=True)
+    CaseStatusName = Column("casestatusname", String)
 
-class Role(Base):
-    __tablename__ = "roles"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    role_name = Column(String(100), unique=True, nullable=False)
-    description = Column(Text, nullable=True)
-    
-    users = relationship("User", back_populates="role")
+class CaseCategory(Base):
+    __tablename__ = "casecategory"
+    CaseCategoryID = Column("casecategoryid", Integer, primary_key=True)
+    LookupValue = Column("lookupvalue", String)
 
+class GravityOffence(Base):
+    __tablename__ = "gravityoffence"
+    GravityOffenceID = Column("gravityoffenceid", Integer, primary_key=True)
+    LookupValue = Column("lookupvalue", String)
 
-class User(Base):
-    __tablename__ = "users"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    username = Column(String(100), unique=True, nullable=False)
-    password_hash = Column(Text, nullable=False)
-    full_name = Column(String(150), nullable=False)
-    role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    
-    role = relationship("Role", back_populates="users")
-    audit_logs = relationship("AuditLog", back_populates="user")
+class Act(Base):
+    __tablename__ = "act"
+    ActCode = Column("actcode", String, primary_key=True)
+    ActDescription = Column("actdescription", String)
+    ShortName = Column("shortname", String)
+    Active = Column("active", Boolean)
 
+class Section(Base):
+    __tablename__ = "section"
+    ActCode = Column("actcode", String, ForeignKey("act.actcode"), primary_key=True)
+    SectionCode = Column("sectioncode", String, primary_key=True)
+    SectionDescription = Column("sectiondescription", String)
+    Active = Column("active", Boolean)
+
+class CrimeHead(Base):
+    __tablename__ = "crimehead"
+    CrimeHeadID = Column("crimeheadid", Integer, primary_key=True)
+    CrimeGroupName = Column("crimegroupname", String)
+    Active = Column("active", Boolean)
+
+class CrimeSubHead(Base):
+    __tablename__ = "crimesubhead"
+    CrimeSubHeadID = Column("crimesubheadid", Integer, primary_key=True)
+    CrimeHeadID = Column("crimeheadid", Integer, ForeignKey("crimehead.crimeheadid"))
+    CrimeHeadName = Column("crimeheadname", String)
+    SeqID = Column("seqid", Integer)
+
+# ==============================================================================
+# 2. GEOGRAPHY & UNITS (STATIONS)
+# ==============================================================================
+
+class State(Base):
+    __tablename__ = "state"
+    StateID = Column("stateid", Integer, primary_key=True)
+    StateName = Column("statename", String)
+    NationalityID = Column("nationalityid", Integer)
+    Active = Column("active", Boolean)
 
 class District(Base):
-    __tablename__ = "districts"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    district_name = Column(String(100), unique=True, nullable=False)
-    state = Column(String(100), default="Karnataka", nullable=False)
-    
-    police_stations = relationship("PoliceStation", back_populates="district")
+    __tablename__ = "district"
+    DistrictID = Column("districtid", Integer, primary_key=True)
+    DistrictName = Column("districtname", String)
+    StateID = Column("stateid", Integer, ForeignKey("state.stateid"))
+    Active = Column("active", Boolean)
 
+class Court(Base):
+    __tablename__ = "court"
+    CourtID = Column("courtid", Integer, primary_key=True)
+    CourtName = Column("courtname", String)
+    DistrictID = Column("districtid", Integer, ForeignKey("district.districtid"))
+    StateID = Column("stateid", Integer, ForeignKey("state.stateid"))
+    Active = Column("active", Boolean)
 
-class PoliceStation(Base):
-    __tablename__ = "police_stations"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    district_id = Column(UUID(as_uuid=True), ForeignKey("districts.id", ondelete="RESTRICT"), nullable=False)
-    station_name = Column(String(150), nullable=False)
-    latitude = Column(DECIMAL(10, 8), nullable=True)
-    longitude = Column(DECIMAL(11, 8), nullable=True)
-    
-    district = relationship("District", back_populates="police_stations")
-    firs = relationship("FIR", back_populates="police_station")
-    officers = relationship("Officer", back_populates="station")
+class UnitType(Base):
+    __tablename__ = "unittype"
+    UnitTypeID = Column("unittypeid", Integer, primary_key=True)
+    UnitTypeName = Column("unittypename", String)
+    City_Dist_State = Column("citydiststate", String)
+    Hierarchy = Column("hierarchy", Integer)
+    Active = Column("active", Boolean)
 
+class Unit(Base):
+    __tablename__ = "unit"
+    UnitID = Column("unitid", Integer, primary_key=True)
+    UnitName = Column("unitname", String)
+    TypeID = Column("typeid", Integer, ForeignKey("unittype.unittypeid"))
+    ParentUnit = Column("parentunit", Integer, ForeignKey("unit.unitid"))
+    NationalityID = Column("nationalityid", Integer)
+    StateID = Column("stateid", Integer, ForeignKey("state.stateid"))
+    DistrictID = Column("districtid", Integer, ForeignKey("district.districtid"))
+    Active = Column("active", Boolean)
 
-class CrimeCategory(Base):
-    __tablename__ = "crime_categories"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    category_name = Column(String(150), unique=True, nullable=False)
-    ipc_sections = Column(Text, nullable=True)
-    
-    firs = relationship("FIR", back_populates="crime_category")
+# ==============================================================================
+# 3. PERSONNEL (EMPLOYEES / OFFICERS)
+# ==============================================================================
 
+class Rank(Base):
+    __tablename__ = "rank"
+    RankID = Column("rankid", Integer, primary_key=True)
+    RankName = Column("rankname", String)
+    Hierarchy = Column("hierarchy", Integer)
+    Active = Column("active", Boolean)
 
-# ==========================================
-# OPERATIONAL ENTITIES
-# ==========================================
+class Designation(Base):
+    __tablename__ = "designation"
+    DesignationID = Column("designationid", Integer, primary_key=True)
+    DesignationName = Column("designationname", String)
+    Active = Column("active", Boolean)
+    SortOrder = Column("sortorder", Integer)
 
-class FIR(Base):
-    __tablename__ = "firs"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    fir_number = Column(String(100), unique=True, nullable=False)
-    police_station_id = Column(UUID(as_uuid=True), ForeignKey("police_stations.id", ondelete="RESTRICT"), nullable=False)
-    crime_category_id = Column(UUID(as_uuid=True), ForeignKey("crime_categories.id", ondelete="RESTRICT"), nullable=False)
-    incident_date = Column(Date, nullable=False)
-    registration_date = Column(Date, nullable=False)
-    status = Column(String(50), nullable=False) # Open, Under Investigation, Closed
-    summary = Column(Text, nullable=True)
-    
-    police_station = relationship("PoliceStation", back_populates="firs")
-    crime_category = relationship("CrimeCategory", back_populates="firs")
-    
-    evidence = relationship("Evidence", back_populates="fir", cascade="all, delete-orphan")
-    timeline_events = relationship("TimelineEvent", back_populates="fir", cascade="all, delete-orphan")
-    
-    persons = relationship("Person", secondary=fir_persons, back_populates="firs")
-    officers = relationship("Officer", secondary=fir_officers, back_populates="firs")
+class Employee(Base):
+    __tablename__ = "employee"
+    EmployeeID = Column("employeeid", Integer, primary_key=True)
+    DistrictID = Column("districtid", Integer, ForeignKey("district.districtid"))
+    UnitID = Column("unitid", Integer, ForeignKey("unit.unitid"))
+    RankID = Column("rankid", Integer, ForeignKey("rank.rankid"))
+    DesignationID = Column("designationid", Integer, ForeignKey("designation.designationid"))
+    KGID = Column("kgid", String)
+    FirstName = Column("firstname", String)
+    EmployeeDOB = Column("employeedob", Date)
+    GenderID = Column("genderid", Integer)
+    BloodGroupID = Column("bloodgroupid", Integer)
+    Physically_Challenged = Column("physicallychallenged", Boolean)
+    AppointmentDate = Column("appointmentdate", Date)
 
+# ==============================================================================
+# 4. CORE INVESTIGATION (FIR / CASE MASTER)
+# ==============================================================================
 
-class Person(Base):
-    __tablename__ = "persons"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    full_name = Column(String(150), nullable=False)
-    gender = Column(String(20), nullable=True)
-    age = Column(Integer, nullable=True)
-    phone = Column(String(20), nullable=True)
-    address = Column(Text, nullable=True)
-    
-    firs = relationship("FIR", secondary=fir_persons, back_populates="persons")
-    vehicles = relationship("Vehicle", back_populates="owner")
+class CaseMaster(Base):
+    __tablename__ = "casemaster"
+    CaseMasterID = Column("casemasterid", Integer, primary_key=True)
+    CrimeNo = Column("crimeno", String) 
+    CaseNo = Column("caseno", String)
+    CrimeRegisteredDate = Column("crimeregistereddate", Date)
+    PolicePersonID = Column("policepersonid", Integer, ForeignKey("employee.employeeid"))
+    PoliceStationID = Column("policestationid", Integer, ForeignKey("unit.unitid"))
+    CaseCategoryID = Column("casecategoryid", Integer, ForeignKey("casecategory.casecategoryid"))
+    GravityOffenceID = Column("gravityoffenceid", Integer, ForeignKey("gravityoffence.gravityoffenceid"))
+    CrimeMajorHeadID = Column("crimemajorheadid", Integer, ForeignKey("crimehead.crimeheadid"))
+    CrimeMinorHeadID = Column("crimeminorheadid", Integer, ForeignKey("crimesubhead.crimesubheadid"))
+    CaseStatusID = Column("casestatusid", Integer, ForeignKey("casestatusmaster.casestatusid"))
+    CourtID = Column("courtid", Integer, ForeignKey("court.courtid"))
+    IncidentFromDate = Column("incidentfromdate", DateTime)
+    IncidentToDate = Column("incidenttodate", DateTime)
+    InfoReceivedPSDate = Column("inforeceivedpsdate", DateTime)
+    latitude = Column("latitude", Numeric)
+    longitude = Column("longitude", Numeric)
+    BriefFacts = Column("brieffacts", Text)
 
+# ==============================================================================
+# 5. CASE DETAILS (ENTITIES ATTACHED TO A CASE)
+# ==============================================================================
 
-class Officer(Base):
-    __tablename__ = "officers"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    officer_name = Column(String(150), nullable=False)
-    badge_number = Column(String(50), unique=True, nullable=False)
-    rank = Column(String(100), nullable=False)
-    station_id = Column(UUID(as_uuid=True), ForeignKey("police_stations.id", ondelete="RESTRICT"), nullable=True)
-    
-    station = relationship("PoliceStation", back_populates="officers")
-    firs = relationship("FIR", secondary=fir_officers, back_populates="officers")
+class ComplainantDetails(Base):
+    __tablename__ = "complainantdetails"
+    ComplainantID = Column("complainantid", Integer, primary_key=True)
+    CaseMasterID = Column("casemasterid", Integer, ForeignKey("casemaster.casemasterid"))
+    ComplainantName = Column("complainantname", String)
+    AgeYear = Column("ageyear", Integer)
+    OccupationID = Column("occupationid", Integer, ForeignKey("occupationmaster.occupationid"))
+    ReligionID = Column("religionid", Integer, ForeignKey("religionmaster.religionid"))
+    CasteID = Column("casteid", Integer, ForeignKey("castemaster.caste_master_id"))
+    GenderID = Column("genderid", Integer)
 
+class Victim(Base):
+    __tablename__ = "victim"
+    VictimMasterID = Column("victimmasterid", Integer, primary_key=True)
+    CaseMasterID = Column("casemasterid", Integer, ForeignKey("casemaster.casemasterid"))
+    VictimName = Column("victimname", String)
+    AgeYear = Column("ageyear", Integer)
+    GenderID = Column("genderid", Integer)
+    Victim_Police = Column("victimpolice", String)
 
-class Vehicle(Base):
-    __tablename__ = "vehicles"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    registration_number = Column(String(50), unique=True, nullable=False)
-    owner_person_id = Column(UUID(as_uuid=True), ForeignKey("persons.id", ondelete="RESTRICT"), nullable=True)
-    vehicle_type = Column(String(100), nullable=True)
-    
-    owner = relationship("Person", back_populates="vehicles")
+class Accused(Base):
+    __tablename__ = "accused"
+    AccusedMasterID = Column("accusedmasterid", Integer, primary_key=True)
+    CaseMasterID = Column("casemasterid", Integer, ForeignKey("casemaster.casemasterid"))
+    AccusedName = Column("accusedname", String)
+    AgeYear = Column("ageyear", Integer)
+    GenderID = Column("genderid", Integer)
+    PersonID = Column("personid", String)
 
+class ArrestSurrender(Base):
+    __tablename__ = "arrestsurrender"
+    ArrestSurrenderID = Column("arrestsurrenderid", Integer, primary_key=True)
+    CaseMasterID = Column("casemasterid", Integer, ForeignKey("casemaster.casemasterid"))
+    ArrestSurrenderTypeID = Column("arrestsurrendertypeid", Integer)
+    ArrestSurrenderDate = Column("arrestsurrenderdate", Date)
+    ArrestSurrenderStateId = Column("arrestsurrenderstateid", Integer, ForeignKey("state.stateid"))
+    ArrestSurrenderDistrictId = Column("arrestsurrenderdistrictid", Integer, ForeignKey("district.districtid"))
+    PoliceStationID = Column("policestationid", Integer, ForeignKey("unit.unitid"))
+    IOID = Column("ioid", Integer, ForeignKey("employee.employeeid"))
+    CourtID = Column("courtid", Integer, ForeignKey("court.courtid"))
+    AccusedMasterID = Column("accusedmasterid", Integer, ForeignKey("accused.accusedmasterid"))
+    IsAccused = Column("isaccused", Boolean)
+    IsComplainantAccused = Column("iscomplainantaccused", Boolean)
 
-class Evidence(Base):
-    __tablename__ = "evidence"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    fir_id = Column(UUID(as_uuid=True), ForeignKey("firs.id", ondelete="CASCADE"), nullable=False)
-    evidence_type = Column(String(100), nullable=False)
-    description = Column(Text, nullable=True)
-    collected_date = Column(Date, nullable=False)
-    
-    fir = relationship("FIR", back_populates="evidence")
+class ActSectionAssociation(Base):
+    __tablename__ = "actsectionassociation"
+    CaseMasterID = Column("casemasterid", Integer, ForeignKey("casemaster.casemasterid"), primary_key=True)
+    ActID = Column("actid", String, primary_key=True)
+    SectionID = Column("sectionid", String, primary_key=True)
+    ActOrderID = Column("actorderid", Integer)
+    SectionOrderID = Column("sectionorderid", Integer)
 
+class CrimeHeadActSection(Base):
+    __tablename__ = "crimeheadactsection"
+    CrimeHeadID = Column("crimeheadid", Integer, ForeignKey("crimehead.crimeheadid"), primary_key=True)
+    ActCode = Column("actcode", String, ForeignKey("act.actcode"), primary_key=True)
+    SectionCode = Column("sectioncode", String, primary_key=True)
 
-class TimelineEvent(Base):
-    __tablename__ = "timeline_events"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    fir_id = Column(UUID(as_uuid=True), ForeignKey("firs.id", ondelete="CASCADE"), nullable=False)
-    event_time = Column(DateTime, nullable=False)
-    event_type = Column(String(100), nullable=False)
-    description = Column(Text, nullable=False)
-    
-    fir = relationship("FIR", back_populates="timeline_events")
+class ChargesheetDetails(Base):
+    __tablename__ = "chargesheetdetails"
+    CSID = Column("csid", Integer, primary_key=True)
+    CaseMasterID = Column("casemasterid", Integer, ForeignKey("casemaster.casemasterid"))
+    csdate = Column("csdate", DateTime)
+    cstype = Column("cstype", String)
+    PolicePersonID = Column("policepersonid", Integer, ForeignKey("employee.employeeid"))
 
+# ==============================================================================
+# 6. SYSTEM SECURITY (NEXUS SPECIFIC)
+# ==============================================================================
 
-# ==========================================
-# SYSTEM ENTITIES
-# ==========================================
-
-class AuditLog(Base):
-    __tablename__ = "audit_logs"
-    
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
-    action = Column(String(200), nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
-    ip_address = Column(String(50), nullable=True)
-    
-    user = relationship("User", back_populates="audit_logs")
+class AuthUser(Base):
+    __tablename__ = "auth_user"
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    EmployeeID = Column("employeeid", Integer, ForeignKey("employee.employeeid"), unique=True)
+    username = Column("username", String, unique=True, index=True)
+    hashed_password = Column("hashed_password", String)
+    role = Column("role", String, default="officer")

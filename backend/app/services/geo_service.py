@@ -1,41 +1,39 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
-from app.models.all_models import PoliceStation, FIR
+from app.models.all_models import Unit, CaseMaster
 from app.schemas.geo import GeoStationData
 
 class GeoService:
     @staticmethod
     def get_station_heatmap(db: Session) -> list[GeoStationData]:
-        """
-        Retrieves all police stations along with their exact coordinates 
-        and current FIR counts to power the frontend map.
-        """
-        # We query the stations and aggregate the FIRs in a single database hit
-        # using 'case' for safe, cross-database conditional counting
+        # Group by Unit and average the case coordinates to place the station marker
         results = (
             db.query(
-                PoliceStation,
-                func.count(FIR.id).label("total_firs"),
+                Unit.UnitID,
+                Unit.UnitName,
+                func.avg(CaseMaster.latitude).label("lat"),
+                func.avg(CaseMaster.longitude).label("lon"),
+                func.count(CaseMaster.CaseMasterID).label("total_firs"),
                 func.sum(
-                    case((FIR.status == 'Under Investigation', 1), else_=0)
+                    case((CaseMaster.CaseStatusID == 1, 1), else_=0)
                 ).label("active_investigations")
             )
-            .outerjoin(FIR, PoliceStation.id == FIR.police_station_id)
-            .group_by(PoliceStation.id)
+            .join(CaseMaster, Unit.UnitID == CaseMaster.PoliceStationID)
+            .group_by(Unit.UnitID, Unit.UnitName)
             .all()
         )
 
         station_data = []
-        for station, total, active in results:
-            if station.latitude and station.longitude:
+        for row in results:
+            if row.lat and row.lon:
                 station_data.append(
                     GeoStationData(
-                        id=station.id,
-                        station_name=station.station_name,
-                        latitude=float(station.latitude),
-                        longitude=float(station.longitude),
-                        total_firs=total or 0,
-                        active_investigations=active or 0
+                        id=row.UnitID,
+                        station_name=row.UnitName,
+                        latitude=float(row.lat),
+                        longitude=float(row.lon),
+                        total_firs=row.total_firs or 0,
+                        active_investigations=row.active_investigations or 0
                     )
                 )
                 

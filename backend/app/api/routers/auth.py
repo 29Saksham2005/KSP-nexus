@@ -1,49 +1,58 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.schemas.user import UserLogin, UserResponse
-from app.services.auth_service import auth_service
+from app.core.security import verify_password, create_access_token
+from app.models.all_models import AuthUser, Employee
 from app.api.dependencies import get_current_user
-from app.models.all_models import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+# Explicitly define the JSON payload structure your frontend is sending
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 @router.post("/login")
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
-    """
-    Authenticate a user and return a JWT token.
-    Follows API Spec: POST /auth/login
-    """
-    token = auth_service.authenticate_user(db, credentials)
+def login_for_access_token(
+    request: LoginRequest, 
+    db: Session = Depends(get_db)
+):
+    # Query using request.username instead of form_data.username
+    user = db.query(AuthUser).filter(AuthUser.username == request.username).first()
+    
+    if not user or not verify_password(request.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    access_token = create_access_token(subject=user.username, role=user.role)
+    
     return {
         "success": True,
         "message": "Authentication successful",
-        "data": token.model_dump()
+        "data": {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
     }
 
-@router.get("/me", response_model=dict)
-def get_me(current_user: User = Depends(get_current_user)):
-    """
-    Returns the currently authenticated user's profile.
-    Follows API Spec: GET /auth/me
-    """
-    # Convert SQLAlchemy model to Pydantic schema for safe serialization
-    user_data = UserResponse.model_validate(current_user)
+@router.get("/me")
+def get_user_profile(
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Fetch the linked Employee details to get the FirstName for the UI
+    employee = db.query(Employee).filter(Employee.EmployeeID == current_user.EmployeeID).first()
+    
     return {
         "success": True,
-        "message": "User profile retrieved",
-        "data": user_data.model_dump(mode='json')
-    }
-
-@router.post("/logout")
-def logout():
-    """
-    Invalidate the current session. 
-    (In stateless JWT, this typically tells the frontend to discard the token).
-    Follows API Spec: POST /auth/logout
-    """
-    return {
-        "success": True,
-        "message": "Logged out successfully",
-        "data": {}
+        "data": {
+            "id": str(current_user.id),
+            "username": current_user.username,
+            "full_name": employee.FirstName if employee else "Officer",
+            "role_id": current_user.role
+        }
     }

@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 
 class GeoStationData(BaseModel):
-    id: UUID
+    id: int
     station_name: str
     latitude: float
     longitude: float

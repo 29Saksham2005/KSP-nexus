@@ -13,7 +13,7 @@ import {
 
 const navItems = [
   { name: 'Mission Control', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Investigation Workspace', path: '/investigation', icon: FileText },
+  { name: 'Investigation Workspace', path: '/firs', icon: FileText },
   { name: 'Geo Intelligence', path: '/geo', icon: Map },
   { name: 'Network Intelligence', path: '/network', icon: Network },
   { name: 'Pattern Intelligence', path: '/pattern', icon: TrendingUp },
