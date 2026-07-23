@@ -79,6 +79,9 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+          path="/investigation" element={<ProtectedRoute>
+            <InvestigationWorkspace /></ProtectedRoute>} />
           
           {/* Default redirect to dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
