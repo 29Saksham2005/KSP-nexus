@@ -4,6 +4,9 @@ from app.core.database import engine, Base
 from app.api.routers import auth
 from app.api.routers import auth, dashboard
 from app.api.routers import auth, dashboard, geo, fir
+from app.api.routers import auth, dashboard, geo, fir, network  # Add network here
+
+
 # 1. Initialize Database Tables
 # Note: In a strict production environment, we rely purely on Alembic for this.
 # For rapid hackathon iteration, this ensures tables are created if they don't exist.
@@ -35,6 +38,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(geo.router, prefix="/api/v1")
 app.include_router(fir.router, prefix="/api/v1")
+app.include_router(network.router, prefix="/api/v1")
 # 5. Health Check Endpoint
 @app.get("/api/v1/health", tags=["System"])
 def health_check():

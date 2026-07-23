@@ -12,3 +12,10 @@ class GeoStationData(BaseModel):
 
 class GeoResponse(BaseModel):
     stations: List[GeoStationData]
+
+class GeoPoint(BaseModel):
+    id: int
+    fir_number: str
+    category: str
+    latitude: float
+    longitude: float

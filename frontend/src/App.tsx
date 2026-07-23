@@ -7,6 +7,9 @@ import { MissionControl } from './modules/MissionControl/MissionControl';
 import { GeoIntelligence } from './modules/GeoIntelligence/GeoIntelligence';
 import { InvestigationWorkspace } from './modules/InvestigationWorkspace/InvestigationWorkspace';
 import { NetworkIntelligence } from './modules/NetworkIntelligence/NetworkIntelligence';
+import { PatternIntelligence } from './modules/PatternIntelligence/PatternIntelligence';
+import { NexusReplay } from './modules/NexusReplay/NexusReplay';
+
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -58,6 +61,21 @@ function App() {
             element={
               <ProtectedRoute>
                 <NetworkIntelligence />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/pattern" 
+            element={
+              <ProtectedRoute>
+                <PatternIntelligence />
+              </ProtectedRoute>
+            } 
+          /><Route 
+            path="/replay" 
+            element={
+              <ProtectedRoute>
+                <NexusReplay />
               </ProtectedRoute>
             } 
           />

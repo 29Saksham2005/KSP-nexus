@@ -38,5 +38,41 @@ class GeoService:
                 )
                 
         return station_data
+    @staticmethod
+    def get_crime_locations(db: Session, limit: int = 1000):
+        # Fetch individual cases that have valid geographic coordinates
+        from app.models.all_models import CaseMaster, CrimeHead
+        from app.schemas.geo import GeoPoint
+        
+        results = (
+            db.query(CaseMaster, CrimeHead)
+            .outerjoin(CrimeHead, CaseMaster.CrimeMajorHeadID == CrimeHead.CrimeHeadID)
+            .filter(CaseMaster.latitude.isnot(None))
+            .filter(CaseMaster.longitude.isnot(None))
+            .limit(limit)
+            .all()
+        )
+
+        geo_points = []
+        for case_rec, crime_head in results:
+            try:
+                lat = float(case_rec.latitude)
+                lng = float(case_rec.longitude)
+                
+                # Basic validation to ensure coordinates are realistic (roughly bounding India)
+                if 8.0 < lat < 38.0 and 68.0 < lng < 98.0:
+                    geo_points.append(
+                        GeoPoint(
+                            id=case_rec.CaseMasterID,
+                            fir_number=case_rec.CrimeNo,
+                            category=crime_head.CrimeGroupName if crime_head else "Unknown",
+                            latitude=lat,
+                            longitude=lng
+                        )
+                    )
+            except (ValueError, TypeError):
+                continue # Skip invalid coordinate formats
+
+        return geo_points
 
 geo_service = GeoService()

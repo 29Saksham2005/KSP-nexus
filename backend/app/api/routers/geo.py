@@ -22,3 +22,18 @@ def get_geo_stations(
         "message": "Spatial intelligence retrieved",
         "data": {"stations": [s.model_dump() for s in stations]}
     }
+@router.get("/locations")
+def get_map_locations(
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user)
+):
+    """
+    Returns coordinate data for plotting individual FIRs on the interactive map.
+    """
+    locations = geo_service.get_crime_locations(db)
+    
+    return {
+        "success": True,
+        "message": f"Retrieved {len(locations)} geographic points",
+        "data": [loc.model_dump() for loc in locations]
+    }
