@@ -1,162 +1,354 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Network, Activity, Crosshair, Radar, CalendarDays, TrendingUp } from 'lucide-react';
+import { 
+  Activity, TrendingUp, PieChart, BarChart3, Users, 
+  AlertTriangle, Map, Maximize2, X, Terminal, Calendar, Database
+} from 'lucide-react';
+
+// --- Shared High-Density ECharts Theme Config ---
+const commonOptions = {
+  backgroundColor: 'transparent',
+  textStyle: { fontFamily: 'Inter, sans-serif' },
+  tooltip: {
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    borderColor: '#334155',
+    textStyle: { color: '#f8fafc', fontSize: 12 },
+    padding: 12,
+    borderRadius: 6,
+    shadowBlur: 20,
+    shadowColor: 'rgba(0,0,0,0.8)'
+  },
+};
 
 export const PatternIntelligence: React.FC = () => {
-  
-  // --- 1. Global Dark Mode ECharts Theme ---
-  const commonOptions = {
-    backgroundColor: 'transparent',
-    textStyle: { fontFamily: 'Inter, sans-serif' },
-    tooltip: { 
-      backgroundColor: 'rgba(15, 23, 42, 0.95)', 
-      borderColor: '#334155', 
-      textStyle: { color: '#f8fafc' },
-      padding: 12,
-      borderRadius: 8,
-      shadowBlur: 20,
-      shadowColor: 'rgba(0,0,0,0.5)'
+  const [globalDate, setGlobalDate] = useState('last_month');
+  const [trendGranularity, setTrendGranularity] = useState('Months');
+  const [expandedChart, setExpandedChart] = useState<string | null>(null);
+
+  // --- Live Data Engine Multiplier ---
+  const dataMult = useMemo(() => {
+    switch(globalDate) {
+      case 'last_7_days': return 0.25;
+      case 'last_year': return 12;
+      case 'all_time': return 36;
+      default: return 1; 
+    }
+  }, [globalDate]);
+
+  // --- Real Karnataka Districts (High Density Data) ---
+  const karnatakaDistricts = [
+    'Bengaluru Urban', 'Mysuru', 'Belagavi', 'Hubli-Dharwad', 'Mangaluru', 
+    'Kalaburagi', 'Ballari', 'Tumakuru', 'Shivamogga', 'Udupi', 
+    'Davanagere', 'Vijayapura', 'Raichur', 'Bidar', 'Hassan', 
+    'Koppal', 'Gadag', 'Kodagu', 'Chikkaballapura', 'Chamarajanagara'
+  ].reverse(); // Reversed so highest is at the top of the horizontal bar chart
+
+  // Exponential decay curve to simulate realistic urban vs rural crime distribution
+  const districtCrimeData = karnatakaDistricts.map((_, i) => Math.floor((Math.pow(1.3, i) * 10 + 50) * dataMult));
+
+  // --- Chart Configurations ---
+
+  // 1. Main Crime Trend (Multi-Vector Area Chart)
+  const trendOptions = {
+    ...commonOptions,
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    grid: { left: 10, right: 15, bottom: 10, top: 30, containLabel: true },
+    xAxis: { 
+      type: 'category', 
+      boundaryGap: false,
+      data: trendGranularity === 'Months' ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] : ['W1', 'W2', 'W3', 'W4'], 
+      axisLabel: { color: '#94a3b8' } 
     },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#1e293b', type: 'dashed' } }, axisLabel: { color: '#94a3b8' } },
+    series: [
+      {
+        name: 'Total Incidents',
+        data: (trendGranularity === 'Months' ? [120, 150, 130, 180, 140, 210] : [40, 48, 52, 49]).map(v => Math.floor(v * dataMult)),
+        type: 'line',
+        smooth: true,
+        lineStyle: { color: '#ef4444', width: 2 },
+        areaStyle: { color: 'rgba(239, 68, 68, 0.1)' }
+      },
+      {
+        name: 'Charge Sheeted',
+        data: (trendGranularity === 'Months' ? [80, 100, 95, 120, 110, 140] : [25, 30, 35, 28]).map(v => Math.floor(v * dataMult)),
+        type: 'line',
+        smooth: true,
+        lineStyle: { color: '#10b981', width: 2 },
+        areaStyle: { color: 'rgba(16, 185, 129, 0.2)' }
+      }
+    ]
   };
 
-  // --- 2. Temporal Punch Card (Time vs Day Pattern) ---
-  // Format: [Hour, DayIndex, CrimeCount]
-  const hours = ['12a', '1a', '2a', '3a', '4a', '5a', '6a', '7a', '8a', '9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', '11p'];
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const punchCardData = [
-    [0, 0, 5], [1, 0, 1], [22, 0, 12], [23, 0, 15], // Sunday Night Spikes
-    [10, 1, 8], [11, 1, 9], [12, 1, 14], [18, 1, 12], // Monday Commute
-    [11, 4, 15], [12, 4, 18], [22, 5, 25], [23, 5, 30], // Friday Night Chaos
-    [0, 6, 28], [1, 6, 20], [2, 6, 15], [22, 6, 18], // Saturday Night
-  ];
-
-  const temporalOptions = {
+  // 2. State-Wide District Comparison (Now with DataZoom Scroll)
+  const districtOptions = {
     ...commonOptions,
-    tooltip: { position: 'top', formatter: (params: any) => `${days[params.value[1]]} at ${hours[params.value[0]]}: <b style="color:#fbbf24">${params.value[2]} Incidents</b>` },
-    grid: { left: 40, bottom: 20, right: 20, top: 20 },
-    xAxis: { type: 'category', data: hours, boundaryGap: false, splitLine: { show: true, lineStyle: { color: '#1e293b', type: 'dashed' } }, axisLine: { show: false }, axisLabel: { color: '#64748b', fontSize: 10 } },
-    yAxis: { type: 'category', data: days, axisLine: { show: false }, axisLabel: { color: '#94a3b8', fontWeight: 'bold' } },
+    tooltip: { trigger: 'axis' },
+    grid: { left: 10, right: 30, bottom: 20, top: 10, containLabel: true },
+    // Interactive Scrollbar for deep data sets
+    dataZoom: [
+      { type: 'inside', yAxisIndex: 0, start: 60, end: 100 }, // Allow mouse scroll
+      { type: 'slider', yAxisIndex: 0, width: 10, right: 5, start: 60, end: 100, fillerColor: '#3b82f6', borderColor: 'transparent', handleSize: 0 } // Visual scrollbar
+    ],
+    xAxis: { type: 'value', splitLine: { lineStyle: { color: '#1e293b', type: 'dashed' } }, axisLabel: { color: '#94a3b8', fontSize: 10 } },
+    yAxis: { type: 'category', data: karnatakaDistricts, axisLabel: { color: '#94a3b8', fontSize: 10, interval: 0 } },
     series: [{
-      name: 'Incident Density',
-      type: 'scatter',
-      symbolSize: (val: any) => Math.min(val[2] * 1.5, 30),
-      data: punchCardData,
-      itemStyle: {
-        color: (params: any) => {
-          const val = params.value[2];
-          if (val > 20) return '#ef4444'; // Red for severe
-          if (val > 10) return '#f59e0b'; // Amber for medium
-          return '#3b82f6'; // Blue for low
-        },
-        shadowBlur: 10,
-        shadowColor: 'rgba(0,0,0,0.5)'
-      },
-      animationDelay: (idx: number) => idx * 10
+      name: 'Registered FIRs',
+      type: 'bar',
+      data: districtCrimeData,
+      itemStyle: { 
+        color: (params: any) => params.value > (200 * dataMult) ? '#ef4444' : params.value > (100 * dataMult) ? '#f59e0b' : '#3b82f6',
+        borderRadius: [0, 4, 4, 0] 
+      }
     }]
   };
 
-  // --- 3. District Threat Signature (Radar Chart) ---
-  const radarOptions = {
+  // 3. Crime Type (Pie)
+  const typeOptions = {
     ...commonOptions,
-    tooltip: {},
-    legend: { bottom: 0, textStyle: { color: '#94a3b8' }, icon: 'circle' },
-    radar: {
-      shape: 'polygon',
-      indicator: [
-        { name: 'Property Theft', max: 100 },
-        { name: 'Violent Crime', max: 100 },
-        { name: 'Cyber Fraud', max: 100 },
-        { name: 'Narcotics', max: 100 },
-        { name: 'Organized Crime', max: 100 }
-      ],
-      splitArea: { areaStyle: { color: ['rgba(15, 23, 42, 0.5)', 'rgba(30, 41, 59, 0.5)'] } },
-      axisLine: { lineStyle: { color: '#334155' } },
-      splitLine: { lineStyle: { color: '#334155' } },
-      axisName: { color: '#94a3b8', borderRadius: 3, padding: [3, 5] }
-    },
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '0', textStyle: { color: '#94a3b8', fontSize: 10 }, itemWidth: 10, itemHeight: 10 },
     series: [{
-      type: 'radar',
+      type: 'pie',
+      radius: ['40%', '65%'],
+      center: ['50%', '45%'],
+      itemStyle: { borderRadius: 4, borderColor: '#0f172a', borderWidth: 2 },
+      label: { show: false },
       data: [
-        {
-          value: [80, 40, 90, 60, 50],
-          name: 'Bengaluru Urban',
-          itemStyle: { color: '#ef4444' },
-          areaStyle: { color: 'rgba(239, 68, 68, 0.3)' }
-        },
-        {
-          value: [50, 60, 30, 80, 40],
-          name: 'State Average',
-          itemStyle: { color: '#3b82f6' },
-          lineStyle: { type: 'dashed' },
-          areaStyle: { color: 'rgba(59, 130, 246, 0.1)' }
-        }
+        { value: Math.floor(1048 * dataMult), name: 'Property', itemStyle: { color: '#3b82f6' } },
+        { value: Math.floor(735 * dataMult), name: 'Body', itemStyle: { color: '#ef4444' } },
+        { value: Math.floor(580 * dataMult), name: 'Cyber', itemStyle: { color: '#10b981' } },
+        { value: Math.floor(484 * dataMult), name: 'Narcotics', itemStyle: { color: '#f59e0b' } },
+        { value: Math.floor(200 * dataMult), name: 'Economic', itemStyle: { color: '#8b5cf6' } }
       ]
     }]
   };
 
-  // --- 4. Crime Evolution (Stacked Gradient Area) ---
-  const evolutionOptions = {
+  // 4. Case Status (Doughnut)
+  const statusOptions = {
     ...commonOptions,
-    tooltip: { trigger: 'axis', axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } } },
-    legend: { top: 0, textStyle: { color: '#94a3b8' }, icon: 'circle' },
-    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: [{ type: 'category', boundaryGap: false, data: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7'], axisLabel: { color: '#64748b' } }],
-    yAxis: [{ type: 'value', splitLine: { lineStyle: { color: '#1e293b' } }, axisLabel: { color: '#64748b' } }],
-    series: [
-      { name: 'Cyber', type: 'line', stack: 'Total', smooth: true, lineStyle: { width: 0 }, showSymbol: false, areaStyle: { opacity: 0.8, color: '#10b981' }, data: [120, 132, 101, 134, 90, 230, 210] },
-      { name: 'Narcotics', type: 'line', stack: 'Total', smooth: true, lineStyle: { width: 0 }, showSymbol: false, areaStyle: { opacity: 0.8, color: '#f59e0b' }, data: [220, 182, 191, 234, 290, 330, 310] },
-      { name: 'Violent', type: 'line', stack: 'Total', smooth: true, lineStyle: { width: 0 }, showSymbol: false, areaStyle: { opacity: 0.8, color: '#ef4444' }, data: [150, 232, 201, 154, 190, 330, 410] },
-      { name: 'Theft', type: 'line', stack: 'Total', smooth: true, lineStyle: { width: 0 }, showSymbol: false, areaStyle: { opacity: 0.8, color: '#3b82f6' }, data: [320, 332, 301, 334, 390, 330, 320] }
-    ]
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '0', textStyle: { color: '#94a3b8', fontSize: 10 }, itemWidth: 10, itemHeight: 10 },
+    series: [{
+      type: 'pie',
+      radius: ['50%', '65%'],
+      center: ['50%', '45%'],
+      label: { show: false },
+      data: [
+        { value: Math.floor(450 * dataMult), name: 'Active', itemStyle: { color: '#f59e0b' } },
+        { value: Math.floor(320 * dataMult), name: 'Charge Sheet', itemStyle: { color: '#3b82f6' } },
+        { value: Math.floor(120 * dataMult), name: 'Closed', itemStyle: { color: '#10b981' } }
+      ]
+    }]
   };
 
+  // 5. Gender Ratio (Pie)
+  const genderOptions = {
+    ...commonOptions,
+    tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+    legend: { bottom: '0', textStyle: { color: '#94a3b8', fontSize: 10 }, itemWidth: 10, itemHeight: 10 },
+    series: [{
+      type: 'pie',
+      radius: '65%',
+      center: ['50%', '45%'],
+      label: { show: false },
+      data: [
+        { value: 82, name: 'Male Accused', itemStyle: { color: '#3b82f6' } },
+        { value: 17, name: 'Female Accused', itemStyle: { color: '#ec4899' } },
+        { value: 1, name: 'Other', itemStyle: { color: '#8b5cf6' } }
+      ]
+    }]
+  };
+
+  // 6. Seriousness of Crime (Bar)
+  const seriousnessOptions = {
+    ...commonOptions,
+    tooltip: { trigger: 'axis' },
+    grid: { left: 10, right: 10, bottom: 10, top: 30, containLabel: true },
+    xAxis: { type: 'category', data: ['Heinous', 'Non-Hein', 'Cog', 'Non-Cog'], axisLabel: { color: '#94a3b8', fontSize: 10 } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#1e293b', type: 'dashed' } }, axisLabel: { color: '#94a3b8' } },
+    series: [{
+      type: 'bar',
+      data: [320, 850, 1100, 200].map(v => Math.floor(v * dataMult)),
+      itemStyle: { color: '#ef4444', borderRadius: [4, 4, 0, 0] }
+    }]
+  };
+
+  // 7. Age vs Crime Rate (Histogram)
+  const ageOptions = {
+    ...commonOptions,
+    tooltip: { trigger: 'axis' },
+    grid: { left: 10, right: 10, bottom: 10, top: 30, containLabel: true },
+    xAxis: { type: 'category', data: ['<18', '18-25', '26-35', '36-45', '46-55', '55+'], axisLabel: { color: '#94a3b8', fontSize: 10 } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#1e293b', type: 'dashed' } }, axisLabel: { color: '#94a3b8' } },
+    series: [{
+      name: 'Offenders',
+      type: 'bar',
+      data: [45, 420, 580, 310, 120, 40].map(v => Math.floor(v * dataMult)),
+      itemStyle: { color: '#8b5cf6', borderRadius: [2, 2, 0, 0] },
+      barWidth: '98%' 
+    }]
+  };
+
+  // 8. Recidivism (Repeat Offenders)
+  const recidivismOptions = {
+    ...commonOptions,
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '0', textStyle: { color: '#94a3b8', fontSize: 10 }, itemWidth: 10, itemHeight: 10 },
+    series: [{
+      type: 'pie',
+      radius: ['45%', '65%'],
+      center: ['50%', '45%'],
+      label: { show: false },
+      data: [
+        { value: Math.floor(2150 * dataMult), name: 'First-Time', itemStyle: { color: '#3b82f6' } },
+        { value: Math.floor(980 * dataMult), name: 'Habitual', itemStyle: { color: '#ef4444' } }
+      ]
+    }]
+  };
+
+  // --- Tight Grid Layout ---
+  const charts = [
+    { id: 'district', title: 'State-Wide District Distribution', icon: Map, options: districtOptions, span: 'col-span-12 lg:col-span-5' },
+    { id: 'trend', title: 'Macro Crime Velocity', icon: TrendingUp, options: trendOptions, span: 'col-span-12 lg:col-span-7' },
+    
+    { id: 'type', title: 'Crime Types', icon: PieChart, options: typeOptions, span: 'col-span-2' },
+    { id: 'status', title: 'Clearance Rate', icon: Activity, options: statusOptions, span: 'col-span-2' },
+    { id: 'age', title: 'Demographics: Age', icon: Users, options: ageOptions, span: 'col-span-3' },
+    { id: 'seriousness', title: 'Threat Level', icon: AlertTriangle, options: seriousnessOptions, span: 'col-span-2' },
+    { id: 'recidivism', title: 'Recidivism', icon: AlertTriangle, options: recidivismOptions, span: 'col-span-3' },
+  ];
+
   return (
-    <div className="h-full flex flex-col space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Activity className="h-6 w-6 text-purple-500" />
-          Pattern Intelligence
-        </h1>
-        <p className="text-sm text-slate-400">Advanced algorithmic detection of temporal, geospatial, and entity-based crime signatures.</p>
-      </div>
-
-      <div className="flex-1 grid grid-cols-12 gap-6 overflow-y-auto custom-scrollbar pb-6">
+    <div className="h-full flex flex-col space-y-3 overflow-hidden">
+      
+      {/* HEADER */}
+      <div className="flex justify-between items-end border-b border-slate-800 pb-3 shrink-0">
+        <div>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
+            <Activity className="h-6 w-6 text-purple-500" />
+            PATTERN INTELLIGENCE
+          </h1>
+        </div>
         
-        {/* TOP ROW: Temporal Matrix (The USP Chart) */}
-        <div className="col-span-12 bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-inner relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10"><CalendarDays className="h-24 w-24 text-blue-500" /></div>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Crosshair className="h-4 w-4 text-amber-500" /> Temporal Vulnerability Matrix
-            </h3>
-            <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700">All Districts (Last 30 Days)</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-emerald-500 text-xs font-mono bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+            <Database className="h-3 w-3" /> LIVE SYNC
           </div>
-          <p className="text-xs text-slate-400 mb-2">Analyzes time-of-day vs day-of-week occurrence rates to identify predictable operational gaps. Red indicates critical threat density.</p>
-          <ReactECharts option={temporalOptions} style={{ height: '320px', width: '100%' }} />
-        </div>
-
-        {/* BOTTOM LEFT: Radar Chart */}
-        <div className="col-span-12 lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-inner relative">
-          <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <Radar className="h-4 w-4 text-emerald-500" /> Threat Signature
-            </h3>
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg shadow-sm">
+            <Calendar className="h-4 w-4 text-slate-400" />
+            <select 
+              value={globalDate} 
+              onChange={(e) => setGlobalDate(e.target.value)}
+              className="bg-transparent text-sm font-semibold text-slate-200 focus:outline-none cursor-pointer"
+            >
+              <option value="last_7_days" className="bg-slate-900">Last 7 Days</option>
+              <option value="last_month" className="bg-slate-900">Last Month</option>
+              <option value="last_year" className="bg-slate-900">Last Year</option>
+              <option value="all_time" className="bg-slate-900">All Time</option>
+            </select>
           </div>
-          <ReactECharts option={radarOptions} style={{ height: '350px', width: '100%' }} />
         </div>
-
-        {/* BOTTOM RIGHT: Evolution Area Chart */}
-        <div className="col-span-12 lg:col-span-7 bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-inner relative">
-          <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-blue-500" /> Categorical Evolution (7-Week Phase)
-            </h3>
-          </div>
-          <ReactECharts option={evolutionOptions} style={{ height: '350px', width: '100%' }} />
-        </div>
-
       </div>
+
+      {/* AI EXPLAINABILITY LAYER */}
+      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 flex items-start gap-3 shrink-0 shadow-lg">
+        <div className="bg-slate-800 p-1.5 rounded border border-slate-700 mt-0.5">
+          <Terminal className="h-4 w-4 text-slate-300" />
+        </div>
+        <div>
+          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-1">AI Executive Briefing</h3>
+          <p className="text-sm text-slate-400 leading-snug">
+            Querying <strong className="text-slate-200">{karnatakaDistricts.length} jurisdictions</strong> over the selected timeframe. Data indicates a <strong className="text-slate-200">{(dataMult * 100).toFixed(0)}%</strong> variance against historical baselines. 
+            Bengaluru Urban accounts for a disproportionate volume of active threats. The recidivism rate remains critical, with <strong className="text-amber-400 font-bold">31.3% of incidents linked to habitual offenders</strong>.
+          </p>
+        </div>
+      </div>
+
+      {/* DASHBOARD GRID */}
+      <div className="flex-1 grid grid-cols-12 grid-rows-2 gap-3 min-h-0 pb-2">
+        {charts.map((chart) => (
+          <div key={chart.id} className={`${chart.span} bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-inner relative group flex flex-col h-full`}>
+            
+            <div className="flex justify-between items-center mb-1 shrink-0">
+              <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <chart.icon className="h-3.5 w-3.5 text-blue-500" /> {chart.title}
+              </h3>
+              
+              <div className="flex items-center gap-1">
+                {chart.id === 'trend' && (
+                  <div className="flex bg-slate-950 rounded border border-slate-700 overflow-hidden mr-1">
+                    {['Weeks', 'Months'].map(gran => (
+                      <button 
+                        key={gran}
+                        onClick={() => setTrendGranularity(gran)}
+                        className={`px-2 py-0.5 text-[9px] font-bold uppercase transition-colors ${trendGranularity === gran ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-800'}`}
+                      >
+                        {gran}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button 
+                  onClick={() => setExpandedChart(chart.id)}
+                  className="p-1 bg-slate-800 text-slate-400 hover:text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Expand for Senior Briefing"
+                >
+                  <Maximize2 className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full min-h-0">
+              <ReactECharts option={chart.options} style={{ height: '100%', width: '100%' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* FULL-SCREEN "SENIOR BRIEFING" MODAL */}
+      {expandedChart && (() => {
+        const activeChartData = charts.find(c => c.id === expandedChart);
+        if (!activeChartData) return null;
+
+        // Inject the ECharts Toolbox into the expanded view for exports
+        const expandedOptions = {
+          ...activeChartData.options,
+          toolbox: {
+            show: true,
+            feature: {
+              dataView: { readOnly: true, title: 'View Raw Data', backgroundColor: '#0f172a', textColor: '#f8fafc' },
+              saveAsImage: { title: 'Export as Image', name: `KSP_NEXUS_${activeChartData.id}_Export` }
+            },
+            iconStyle: { borderColor: '#94a3b8' }
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-8">
+            <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-6xl h-[80vh] flex flex-col animate-in fade-in zoom-in duration-200">
+              <div className="px-5 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950 rounded-t-xl shrink-0">
+                <h2 className="text-lg font-bold text-white flex items-center gap-3">
+                  <activeChartData.icon className="h-5 w-5 text-blue-500" />
+                  {activeChartData.title} (Executive View)
+                </h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-mono text-emerald-500 border border-emerald-500/30 px-2 py-1 rounded bg-emerald-500/10">Use icons on right to Export Data</span>
+                  <button 
+                    onClick={() => setExpandedChart(null)}
+                    className="p-1.5 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 rounded-lg transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 p-6 w-full h-full min-h-0">
+                <ReactECharts option={expandedOptions} style={{ height: '100%', width: '100%' }} />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
