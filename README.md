@@ -47,9 +47,8 @@ The project follows:
 
 ### AI
 
-- OpenAI API
+
 - NetworkX
-- Pandas
 
 ---
 
