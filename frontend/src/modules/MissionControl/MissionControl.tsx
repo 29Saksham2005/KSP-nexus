@@ -22,13 +22,13 @@ export const MissionControl: React.FC = () => {
     });
   };
 
-  const handleInvestigate = (location: string) => {
-    // Navigates to the investigation workspace. 
-    // In a real app, you would pass the specific FIR or Alert ID.
-    navigate('/investigation');
+  // --- UPDATED: Direct Routing to Case Dossier ---
+  const handleInvestigate = (targetFir: string) => {
+    // Assuming your Investigation Workspace reads the FIR from a URL parameter
+    // Adjust this path if your route looks like '/investigation/:id' instead
+    navigate(`/investigation?firId=${targetFir}`);
   };
 
-  // --- ECharts: Live Threat Velocity ---
   const velocityOptions = {
     backgroundColor: 'transparent',
     tooltip: { trigger: 'axis', backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: '#ef4444', textStyle: { color: '#f8fafc' } },
@@ -52,14 +52,13 @@ export const MissionControl: React.FC = () => {
     ]
   };
 
-  // Mock Active Alerts
+  // --- UPDATED: Added targetFir matching your existing database records ---
   const activeAlerts = [
-    { id: 1, type: 'CRITICAL', location: 'Hubli North', message: '300% localized spike in vehicle theft reported in the last 4 hours.', time: '12m ago' },
-    { id: 2, type: 'WARNING', location: 'Bengaluru Urban', message: 'Habitual suspect "Suresh K." flagged by ANPR near identified hotspot.', time: '28m ago' },
-    { id: 3, type: 'WARNING', location: 'Mysuru Central', message: 'Three overlapping FIRs registered with identical M.O. (Cyber Fraud).', time: '1h ago' },
+    { id: 1, type: 'CRITICAL', location: 'Hubli North', message: '300% localized spike in vehicle theft reported in the last 4 hours.', time: '12m ago', targetFir: '801071013202600005' },
+    { id: 2, type: 'WARNING', location: 'Bengaluru Urban', message: 'Habitual suspect "Suresh K." flagged by ANPR near identified hotspot.', time: '28m ago', targetFir: '101301060202600001' },
+    { id: 3, type: 'WARNING', location: 'Mysuru Central', message: 'Three overlapping FIRs registered with identical M.O. (Cyber Fraud).', time: '1h ago', targetFir: '401191038202600004' },
   ];
 
-  // Dynamically sort alerts: Unacknowledged at the top, Acknowledged drop to the bottom
   const sortedAlerts = useMemo(() => {
     return [...activeAlerts].sort((a, b) => {
       const aAck = acknowledgedAlerts.has(a.id);
@@ -72,7 +71,6 @@ export const MissionControl: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col space-y-4">
-      {/* HEADER: Palantir-style Tactical Header */}
       <div className="flex justify-between items-end border-b border-slate-800 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3 tracking-tight">
@@ -89,7 +87,6 @@ export const MissionControl: React.FC = () => {
         </div>
       </div>
 
-      {/* TOP ROW: Active Telemetry */}
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-slate-900 border-l-4 border-l-blue-500 border-y border-r border-slate-800 p-4 rounded-r-lg">
           <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase block mb-1">Active Investigations</span>
@@ -115,10 +112,7 @@ export const MissionControl: React.FC = () => {
 
       <div className="flex-1 grid grid-cols-12 gap-4 overflow-hidden">
         
-        {/* LEFT COLUMN: AI Intelligence Terminal & Velocity Chart */}
         <div className="col-span-8 flex flex-col gap-4 h-full">
-          
-          {/* AI Terminal */}
           <div className="bg-slate-950 border border-slate-800 rounded-lg p-1 flex flex-col h-1/2 relative overflow-hidden group">
             <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center gap-2">
               <Terminal className="h-4 w-4 text-purple-500" />
@@ -139,7 +133,6 @@ export const MissionControl: React.FC = () => {
             </div>
           </div>
 
-          {/* Velocity Matrix */}
           <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col h-1/2">
             <h3 className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
               <Activity className="h-4 w-4 text-blue-500" /> Live Threat Velocity Matrix
@@ -148,10 +141,8 @@ export const MissionControl: React.FC = () => {
               <ReactECharts option={velocityOptions} style={{ height: '100%', width: '100%' }} />
             </div>
           </div>
-
         </div>
 
-        {/* RIGHT COLUMN: Active Threat Triage Queue */}
         <div className="col-span-4 bg-slate-900 border border-slate-800 rounded-lg flex flex-col h-full overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
             <h3 className="text-xs font-mono text-red-400 uppercase tracking-widest flex items-center gap-2">
@@ -163,7 +154,6 @@ export const MissionControl: React.FC = () => {
           </div>
           
           <div className="p-3 overflow-y-auto custom-scrollbar space-y-3">
-            {/* Render the dynamically sorted alerts */}
             {sortedAlerts.map(alert => {
               const isAck = acknowledgedAlerts.has(alert.id);
               return (
@@ -198,7 +188,7 @@ export const MissionControl: React.FC = () => {
                   {!isAck ? (
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => handleInvestigate(alert.location)}
+                        onClick={() => handleInvestigate(alert.targetFir)}
                         className="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-[10px] uppercase tracking-widest py-1.5 rounded transition-colors flex items-center justify-center gap-1"
                       >
                         Investigate <ChevronRight className="h-3 w-3" />
