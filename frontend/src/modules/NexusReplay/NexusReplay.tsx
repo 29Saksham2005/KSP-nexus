@@ -28,7 +28,7 @@ export const NexusReplay: React.FC = () => {
 
   // --- Playback Engine ---
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isPlaying) {
       interval = setInterval(() => {
         setTimelineIndex((prev) => {

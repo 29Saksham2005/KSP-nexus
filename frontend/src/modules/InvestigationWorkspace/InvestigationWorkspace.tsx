@@ -3,6 +3,7 @@ import { Search, Filter, FileText } from 'lucide-react';
 import { firService, type FIRResponse } from '../../services/fir';
 import { FIRDetailPanel } from './FIRDetailPanel';
 
+
 export const InvestigationWorkspace: React.FC = () => {
   const [firs, setFirs] = useState<FIRResponse[]>([]);
   const [totalCount, setTotalCount] = useState(0);

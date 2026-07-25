@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import ForceGraph2D, {type ForceGraphMethods } from 'react-force-graph-2d';
+import ForceGraph2D from 'react-force-graph-2d';
 import { Network, Activity, User, FileText, AlertTriangle, X, Search, ShieldAlert } from 'lucide-react';
 import { networkService, type GraphData, type Node } from '../../services/network';
 
@@ -14,7 +14,7 @@ export const NetworkIntelligence: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  const fgRef = useRef<ForceGraphMethods>();
+  const fgRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
@@ -108,7 +108,7 @@ export const NetworkIntelligence: React.FC = () => {
     setHighlightLinks(newHighlightLinks);
 
     if (fgRef.current) {
-      fgRef.current.centerAt(node.x, node.y, 1000);
+      fgRef.current.centerAt((node as any).x, (node as any).y, 1000);
       fgRef.current.zoom(3, 1000);
     }
   };

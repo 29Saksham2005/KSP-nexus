@@ -95,6 +95,28 @@ export const Login: React.FC = () => {
               </button>
             </div>
           </form>
+          <div 
+  style={{ 
+    marginTop: '24px', 
+    padding: '16px', 
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+    border: '1px dashed #4b5563', 
+    borderRadius: '8px', 
+    textAlign: 'center', 
+    color: '#cbd5e1', 
+    fontSize: '14px' 
+  }}
+>
+  <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: '#60a5fa' }}>
+    🏆 Datathon Evaluation Credentials
+  </p>
+  <p style={{ margin: '4px 0' }}>
+    <strong>Officer ID:</strong> admin
+  </p>
+  <p style={{ margin: '4px 0' }}>
+    <strong>Password:</strong> <span>[NexusAdmin2026!]</span>
+  </p>
+</div>
         </div>
       </div>
     </div>

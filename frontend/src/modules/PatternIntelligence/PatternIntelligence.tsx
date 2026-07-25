@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { 
-  Activity, TrendingUp, PieChart, BarChart3, Users, 
+  Activity, TrendingUp, PieChart,  Users, 
   AlertTriangle, Map, Maximize2, X, Terminal, Calendar, Database
 } from 'lucide-react';
 
@@ -142,23 +142,6 @@ export const PatternIntelligence: React.FC = () => {
     }]
   };
 
-  // 5. Gender Ratio (Pie)
-  const genderOptions = {
-    ...commonOptions,
-    tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
-    legend: { bottom: '0', textStyle: { color: '#94a3b8', fontSize: 10 }, itemWidth: 10, itemHeight: 10 },
-    series: [{
-      type: 'pie',
-      radius: '65%',
-      center: ['50%', '45%'],
-      label: { show: false },
-      data: [
-        { value: 82, name: 'Male Accused', itemStyle: { color: '#3b82f6' } },
-        { value: 17, name: 'Female Accused', itemStyle: { color: '#ec4899' } },
-        { value: 1, name: 'Other', itemStyle: { color: '#8b5cf6' } }
-      ]
-    }]
-  };
 
   // 6. Seriousness of Crime (Bar)
   const seriousnessOptions = {

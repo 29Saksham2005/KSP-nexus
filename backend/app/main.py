@@ -1,12 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
-from app.api.routers import auth
-from app.api.routers import auth, dashboard
-from app.api.routers import auth, dashboard, geo, fir
-from app.api.routers import auth, dashboard, geo, fir, network  # Add network here
-
-
+from app.api.routers import auth, dashboard, geo, fir, network
 # 1. Initialize Database Tables
 # Note: In a strict production environment, we rely purely on Alembic for this.
 # For rapid hackathon iteration, this ensures tables are created if they don't exist.
@@ -16,10 +11,7 @@ from app.api.routers import auth, dashboard, geo, fir, network  # Add network he
 app = FastAPI(
     title="KSP NEXUS API",
     description="AI-powered Crime Intelligence Operating System",
-    version="1.0.0",
-    docs_url="/api/v1/docs",
-    redoc_url="/api/v1/redoc",
-    openapi_url="/api/v1/openapi.json"
+    version="1.0.0"
 )
 
 # 3. Configure CORS (Cross-Origin Resource Sharing)

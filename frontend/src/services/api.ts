@@ -1,14 +1,17 @@
 import axios from 'axios';
 
 // Set the base URL to our FastAPI backend
-const API_URL = 'http://localhost:8000/api/v1';
+//const baseURL = import.meta.env.VITE_API_URL;
 
 export const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: 'https://backend-50044174693.development.catalystappsail.in/api/v1'
 });
+//axios.create({
+//  baseURL: baseURL,
+//  headers: {
+//    'Content-Type': 'application/json',
+//  },
+//});
 
 // Request Interceptor: Automatically attach the JWT token if it exists
 api.interceptors.request.use(

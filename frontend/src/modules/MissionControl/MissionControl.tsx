@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
-import { Shield, AlertTriangle, Crosshair, Zap, Activity, Clock, Terminal, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Shield, Crosshair, Zap, Activity, Clock, Terminal, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 export const MissionControl: React.FC = () => {
   const navigate = useNavigate();
