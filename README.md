@@ -256,11 +256,6 @@ KSP NEXUS aims to empower investigators with meaningful insights rather than ove
 
 https://ksp-nexus-60079180038.development.catalystserverless.in/app/index.html#/dashboard
 
----
-
-### 🎥 Demo Video
-
-*(Add Demo Video Link Here)*
 
 ---
 
